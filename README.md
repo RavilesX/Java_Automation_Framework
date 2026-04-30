@@ -3,7 +3,7 @@ Framework genérico de automatización con:
 JAVA + SELENIUM + TestNG
 
 
-install:
+recuerda instalar:
 sudo apt install maven
 
 then run:
