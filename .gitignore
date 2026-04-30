@@ -26,3 +26,5 @@ reports/screenshots/*.png
 # OS
 .DS_Store
 Thumbs.db
+
+ClAUDE.MD
