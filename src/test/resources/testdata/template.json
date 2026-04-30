@@ -1,0 +1,14 @@
+{
+  "test1": {
+    "param1": "valor_prueba_1",
+    "param2": "valor_prueba_2",
+    "start": "Starting Test...",
+    "end":   "Test Ended..."
+  },
+  "test2": {
+    "param1": "valor_prueba_A",
+    "param2": "valor_prueba_B",
+    "start": "Starting Test...",
+    "end":   "Test Ended..."
+  }
+}

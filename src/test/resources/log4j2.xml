@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Configuración de Log4j2.
+    Equivalente al FileHandler configurado en CommonActions.logger() del framework Python.
+
+    El archivo de log se escribe en reports/logs/logFile.log (modo append).
+    La consola muestra un formato más compacto para facilitar la depuración.
+-->
+<Configuration status="WARN">
+
+    <Appenders>
+
+        <!-- Archivo de log: mismo path y formato que el framework Python -->
+        <File name="FileAppender"
+              fileName="reports/logs/logFile.log"
+              append="true">
+            <PatternLayout pattern="%d{dd/MM/yyyy hh:mm:ss a} - %level - %logger{1} : %message%n"/>
+        </File>
+
+        <!-- Consola: formato compacto para desarrollo/depuración -->
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss} [%-5level] %logger{1} : %message%n"/>
+        </Console>
+
+    </Appenders>
+
+    <Loggers>
+        <!-- Silencia logs verbosos de Selenium y WebDriverManager -->
+        <Logger name="io.github.bonigarcia" level="WARN" additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+        </Logger>
+        <Logger name="org.openqa.selenium" level="WARN" additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+        </Logger>
+
+        <!-- Logger raíz: todos los loggers del framework usan este nivel -->
+        <Root level="DEBUG">
+            <AppenderRef ref="FileAppender"/>
+            <AppenderRef ref="ConsoleAppender"/>
+        </Root>
+    </Loggers>
+
+</Configuration>

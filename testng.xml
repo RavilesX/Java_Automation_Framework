@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<!--
+    Equivalente a pytest.ini del framework Python.
+    Configuración de la suite de tests: browser, url y clases incluidas.
+
+    Ejecución desde Maven:
+        mvn test                                  (usa los valores por defecto aquí)
+        mvn test -Dbrowser=firefox -Durl=https://... (sobrescribe con -D system properties)
+
+    Ejecución directa con TestNG:
+        Clic derecho en testng.xml > Run en el IDE
+-->
+<suite name="Automation Suite" verbose="1" parallel="false">
+
+    <!-- Listener global: inicializa ExtentReports y captura screenshots en fallos -->
+    <listeners>
+        <listener class-name="com.framework.listeners.TestListener"/>
+    </listeners>
+
+    <!-- Parámetros globales: disponibles en @BeforeClass via @Parameters -->
+    <parameter name="browser" value="chrome"/>
+    <parameter name="url"     value="https://www.example.com"/>
+
+    <!-- ================================================================ -->
+    <!-- Grupos de tests                                                   -->
+    <!-- ================================================================ -->
+    <test name="Smoke Tests">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <classes>
+            <!-- Agregar clases de test aquí:                             -->
+            <!-- <class name="com.framework.testcases.TestLoginFlow"/>    -->
+        </classes>
+    </test>
+
+    <test name="Google Logo">
+        <parameter name="url" value="https://www.google.com.mx"/>
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.framework.testcases.TestGoogleLogo"/>
+        </classes>
+    </test>
+
+    <test name="Regression Tests">
+        <groups>
+            <run>
+                <include name="regression"/>
+            </run>
+        </groups>
+        <classes>
+            <!-- <class name="com.framework.testcases.TestCheckoutFlow"/> -->
+        </classes>
+    </test>
+
+</suite>
