@@ -1,10 +1,9 @@
 package com.framework.listeners;
 
-import com.aventstack.extentreports.ExtentReports;
-import com.aventstack.extentreports.ExtentTest;
-import com.aventstack.extentreports.reporter.ExtentSparkReporter;
-import com.aventstack.extentreports.reporter.configuration.Theme;
 import com.framework.commonaction.DriverActions;
+import com.framework.report.ReportRenderer;
+import com.framework.report.RunData;
+import com.framework.report.TestResultData;
 import com.framework.testcases.BaseTest;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
@@ -12,114 +11,166 @@ import org.openqa.selenium.WebDriver;
 import org.testng.*;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Listener de TestNG que gestiona el ciclo de vida de ExtentReports y captura
- * screenshots automáticos ante fallos de test.
+ * Listener de TestNG que recolecta resultados de la suite y renderiza
+ * el reporte HTML custom al finalizar.
  *
- * Equivalente a los hooks de conftest.py del framework Python:
- *   - onStart(ISuite)        ↔ pytest_configure (inicializa el reporte)
- *   - onFinish(ISuite)       ↔ pytest_sessionfinish (escribe el reporte final)
- *   - onTestStart            ↔ pytest_runtest_call (crea el nodo de test en el reporte)
- *   - onTestFailure          ↔ pytest_runtest_makereport (screenshot en fallo)
+ * Hooks:
+ *   onStart(ISuite)        — inicializa el listado de resultados
+ *   onTestStart            — crea TestResultData, lo registra en DriverActions.currentTest
+ *   onTestSuccess/Failure  — setea status, error, duración
+ *   onFinish(ISuite)       — invoca ReportRenderer.render()
  *
  * Registrado en testng.xml bajo <listeners>.
  */
 public class TestListener implements ITestListener, ISuiteListener {
 
-    private static ExtentReports extent;
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter STAMP_FMT =
+            DateTimeFormatter.ofPattern("MMM dd, yyyy · HH:mm");
+
+    private final List<TestResultData> results = new ArrayList<>();
+    private final AtomicInteger idSeq = new AtomicInteger(0);
+    private final RunData run = new RunData();
 
     // ----------------------------------------------------------------
-    // Ciclo de vida de la suite (ISuiteListener)
+    // ISuiteListener
     // ----------------------------------------------------------------
 
     @Override
     public void onStart(ISuite suite) {
-        ExtentSparkReporter spark = new ExtentSparkReporter("reports/report.html");
-        spark.config().setDocumentTitle("Reporte de Automatización - Framework Selenium Java");
-        spark.config().setReportName("Automation Report");
-        spark.config().setTheme(Theme.DARK);
+        run.meta.suiteName  = suite.getName();
+        run.meta.executedAt = LocalDateTime.now().format(STAMP_FMT);
+        run.meta.framework  = "Selenium 4 · TestNG · Java 11";
+        run.meta.buildId    = "build #" + System.currentTimeMillis() / 1000 % 100000;
+        run.meta.envLabel   = "QA · Web";
+        run.meta.version    = "v1.0.0";
+        run.meta.year       = String.valueOf(Year.now().getValue());
 
-        extent = new ExtentReports();
-        extent.attachReporter(spark);
-        extent.setSystemInfo("Framework", "Selenium 4 + TestNG + Java 11");
-        extent.setSystemInfo("Ambiente",  "QA");
-        extent.setSystemInfo("Fecha",
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        run.meta.environment.put("Framework",  "Selenium 4");
+        run.meta.environment.put("Runner",     "TestNG · Java 11");
+        run.meta.environment.put("Ambiente",   "QA");
+        run.meta.environment.put("Sistema",    System.getProperty("os.name") + " · " + System.getProperty("os.arch"));
+        run.meta.environment.put("Java",       System.getProperty("java.version"));
+        run.meta.environment.put("User",       System.getProperty("user.name"));
+        run.meta.environment.put("Inicio",     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        run.meta.environment.put("Suite",      suite.getName());
     }
 
     @Override
     public void onFinish(ISuite suite) {
-        if (extent != null) {
-            extent.flush();
-        }
+        run.tests = results;
+        run.meta.environment.put("Fin",
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        new ReportRenderer().render(run);
     }
 
     // ----------------------------------------------------------------
-    // Ciclo de vida de cada test (ITestListener)
+    // ITestListener
     // ----------------------------------------------------------------
 
     @Override
     public void onTestStart(ITestResult result) {
-        String methodName   = result.getMethod().getMethodName();
-        String description  = result.getMethod().getDescription();
-        String displayName  = (description != null && !description.isEmpty()) ? description : methodName;
+        TestResultData t = new TestResultData();
+        t.id          = idSeq.incrementAndGet();
+        t.className   = result.getTestClass().getRealClass().getSimpleName();
+        String desc   = result.getMethod().getDescription();
+        t.name        = (desc != null && !desc.isEmpty()) ? desc : result.getMethod().getMethodName();
+        t.time        = LocalDateTime.now().format(TIME_FMT);
+        t.startMillis = System.currentTimeMillis();
+        t.status      = "skip"; // default; se sobreescribe en success/failure
+        t.tags        = new ArrayList<>(Arrays.asList(result.getMethod().getGroups()));
 
-        ExtentTest test = extent.createTest(displayName);
-        DriverActions.extentTest.set(test);
+        DriverActions.currentTest.set(t);
+        results.add(t);
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        ExtentTest test = DriverActions.extentTest.get();
-        if (test != null) {
-            test.pass("Test pasado correctamente");
-        }
+        TestResultData t = DriverActions.currentTest.get();
+        if (t == null) return;
+        t.status = "pass";
+        t.dur    = (System.currentTimeMillis() - t.startMillis) / 1000.0;
+        DriverActions.logEvent("pass", "Test pasado correctamente");
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
-        ExtentTest test = DriverActions.extentTest.get();
-        if (test == null) return;
+        TestResultData t = DriverActions.currentTest.get();
+        if (t == null) return;
+        t.status = "fail";
+        t.dur    = (System.currentTimeMillis() - t.startMillis) / 1000.0;
 
-        test.fail(result.getThrowable());
+        Throwable thr = result.getThrowable();
+        if (thr != null) {
+            StringWriter sw = new StringWriter();
+            thr.printStackTrace(new PrintWriter(sw));
+            t.err = sw.toString();
+            DriverActions.logEvent("fail", escapeHtml(thr.getMessage()));
+        }
 
-        // Captura screenshot automático en fallo, igual que el hook
-        // pytest_runtest_makereport de conftest.py
+        // Captura screenshot automático en fallo
         WebDriver driver = BaseTest.driverThread.get();
         if (driver != null) {
-            try {
-                String testName = result.getMethod().getMethodName();
-                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-                Path screenshotPath = Paths.get("reports", "screenshots",
-                        testName + "_" + timestamp + "_FAIL.png");
-                Files.createDirectories(screenshotPath.getParent());
-                byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-                Files.write(screenshotPath, screenshot);
-                test.addScreenCaptureFromPath(screenshotPath.toString());
-            } catch (IOException e) {
-                test.warning("No se pudo capturar screenshot en fallo: " + e.getMessage());
-            }
+            captureFailureScreenshot(driver, t, result.getMethod().getMethodName());
         }
     }
 
     @Override
     public void onTestSkipped(ITestResult result) {
-        ExtentTest test = DriverActions.extentTest.get();
-        if (test != null) {
-            test.skip(result.getThrowable() != null
-                    ? result.getThrowable().getMessage()
-                    : "Test omitido");
-        }
+        TestResultData t = DriverActions.currentTest.get();
+        if (t == null) return;
+        t.status = "skip";
+        t.dur    = 0.0;
+        String msg = result.getThrowable() != null
+                ? result.getThrowable().getMessage()
+                : "Test omitido";
+        DriverActions.logEvent("info", "Skipped: " + escapeHtml(msg));
     }
 
     @Override
     public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
-        // No aplica en este framework
+        // No aplica.
+    }
+
+    // ----------------------------------------------------------------
+    // helpers
+    // ----------------------------------------------------------------
+
+    private void captureFailureScreenshot(WebDriver driver, TestResultData t, String methodName) {
+        try {
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            String filename  = methodName + "_" + timestamp + "_FAIL.png";
+            Path absolutePath = Paths.get("reports", "screenshots", filename);
+            Files.createDirectories(absolutePath.getParent());
+            byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+            Files.write(absolutePath, screenshot);
+
+            // Ruta relativa al HTML (que vive en reports/report.html).
+            t.screenshotPath = "screenshots/" + filename;
+        } catch (IOException e) {
+            DriverActions.logEvent("info", "No se pudo capturar screenshot: " + escapeHtml(e.getMessage()));
+        }
+    }
+
+    private static String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 }

@@ -1,6 +1,6 @@
 package com.framework.commonaction;
 
-import com.aventstack.extentreports.ExtentTest;
+import com.framework.report.TestResultData;
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -23,7 +23,6 @@ import java.time.format.DateTimeFormatter;
  * Provee utilidades para esperas explícitas, scroll, screenshots y
  * resaltado visual de elementos durante la ejecución de pruebas.
  *
- * Equivalente a commonaction/driver_actions.py del framework Python.
  * Todos los Page Objects deben extender esta clase.
  */
 public class DriverActions {
@@ -33,27 +32,45 @@ public class DriverActions {
 
     /**
      * Nombre del test activo, establecido por BaseTest antes de cada método de test.
-     * Equivalente al pytest.current_test que se setea en el hook pytest_runtest_call.
      * Permite que takeScreenshot() use el nombre correcto sin recibir parámetros.
      */
     public static final ThreadLocal<String> currentTestName = new ThreadLocal<>();
 
     /**
-     * Instancia de ExtentTest activa, establecida por TestListener en onTestStart.
-     * Permite que takeScreenshot() adjunte la imagen al reporte sin acoplamiento.
+     * Test activo en ejecución (set por TestListener.onTestStart).
+     * Permite que takeScreenshot() adjunte la imagen al reporte y que las
+     * acciones registren eventos en el timeline del test.
      */
-    public static final ThreadLocal<ExtentTest> extentTest = new ThreadLocal<>();
+    public static final ThreadLocal<TestResultData> currentTest = new ThreadLocal<>();
 
     private static final int DEFAULT_WAIT_SECONDS  = 5;
     private static final int URL_CHANGE_WAIT_SECONDS = 10;
+
+    private static final DateTimeFormatter EVENT_TS_FMT =
+            DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
 
     public DriverActions(WebDriver driver) {
         this.driver = driver;
     }
 
     /**
+     * Registra un evento en el timeline del test activo (se mostrará en el
+     * reporte HTML al expandir el test).
+     *
+     * @param severity "info" | "pass" | "fail"
+     * @param description texto del evento (HTML permitido en {@code <code>...</code>})
+     */
+    public static void logEvent(String severity, String description) {
+        TestResultData t = currentTest.get();
+        if (t == null) return;
+        t.events.add(new TestResultData.EventEntry(
+                severity,
+                LocalDateTime.now().format(EVENT_TS_FMT),
+                description));
+    }
+
+    /**
      * Espera hasta que un elemento sea clickeable antes de devolverlo.
-     * Equivalente a wait_for_element(By, locator) del framework Python.
      *
      * @param locator Estrategia + valor de localización (e.g. By.xpath("...")).
      * @return WebElement una vez que está clickeable.
@@ -65,8 +82,6 @@ public class DriverActions {
 
     /**
      * Espera hasta que la URL del navegador cambie respecto a la proporcionada.
-     * Equivalente a wait_for_url_change(current_url) del framework Python.
-     * Reemplaza el uso de time.sleep() para navegaciones.
      *
      * @param currentUrl URL actual antes de la acción que dispara la navegación.
      */
@@ -76,9 +91,9 @@ public class DriverActions {
     }
 
     /**
-     * Captura un screenshot, lo guarda en reports/screenshots/ y lo adjunta al reporte HTML.
+     * Captura un screenshot, lo guarda en reports/screenshots/ y lo asocia
+     * al test activo (será visible al expandir el test en el reporte HTML).
      * El nombre del test se lee automáticamente del ThreadLocal currentTestName.
-     * Equivalente a take_screenshot() del framework Python.
      *
      * @return Ruta relativa al archivo de screenshot generado.
      */
@@ -86,8 +101,6 @@ public class DriverActions {
         String testName = currentTestName.get() != null ? currentTestName.get() : "manual_screenshot";
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss"));
 
-        // Obtiene el método que llamó a takeScreenshot (o a highlightElement, que llama a este)
-        // getStackTrace()[0]=getStackTrace, [1]=takeScreenshot, [2]=llamador directo
         String callerMethod = Thread.currentThread().getStackTrace()[2].getMethodName();
 
         Path screenshotPath = Paths.get("reports", "screenshots",
@@ -98,9 +111,15 @@ public class DriverActions {
             File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
             Files.copy(src.toPath(), screenshotPath, StandardCopyOption.REPLACE_EXISTING);
 
-            ExtentTest test = extentTest.get();
-            if (test != null) {
-                test.addScreenCaptureFromPath(screenshotPath.toString());
+            // El reporte vive en reports/report.html, así que la ruta relativa
+            // que el navegador necesita es "screenshots/..." (sin el "reports/").
+            String relativeForHtml = "screenshots/"
+                    + screenshotPath.getFileName().toString();
+
+            TestResultData t = currentTest.get();
+            if (t != null) {
+                t.screenshotPath = relativeForHtml;
+                logEvent("info", "Screenshot: <code>" + relativeForHtml + "</code>");
             }
         } catch (IOException e) {
             log.error("Error al guardar screenshot: " + e.getMessage());
@@ -112,7 +131,6 @@ public class DriverActions {
     /**
      * Resalta visualmente un elemento en el navegador cambiando temporalmente su borde
      * via JavaScript, luego restaura el estilo original y captura un screenshot.
-     * Equivalente a highlight_element(element, color, border) del framework Python.
      *
      * @param element WebElement a resaltar.
      * @param color   Color del borde (e.g. "yellow", "red").
@@ -134,7 +152,7 @@ public class DriverActions {
 
     /**
      * Realiza scroll hasta el final de la página esperando que cargue contenido dinámico
-     * (lazy load). Equivalente a scroll_page() del framework Python.
+     * (lazy load).
      */
     public void scrollPage() {
         JavascriptExecutor js = (JavascriptExecutor) driver;

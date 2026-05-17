@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reporte de Automatización · RavilesX</title>
+<link rel="icon" href="assets/logo_ravilesx.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* dark (default) */
+    --bg: #0A0A0B;
+    --bg-2: #111114;
+    --surface: #16161A;
+    --surface-2: #1C1C22;
+    --border: #24242C;
+    --border-2: #2E2E38;
+    --text: #F4F1EA;
+    --text-2: #A7A4A0;
+    --text-3: #6E6B68;
+    --pass: #6BE07C;
+    --pass-bg: rgba(107, 224, 124, 0.10);
+    --fail: #FF5B4A;
+    --fail-bg: rgba(255, 91, 74, 0.10);
+    --skip: #FFC857;
+    --skip-bg: rgba(255, 200, 87, 0.10);
+    --info: #7AB6FF;
+    --accent: #FF4D2E;
+    --accent-2: #FF7A4D;
+    --grain-opacity: .5;
+    --card-radius: 16px;
+    --pad-card: 22px;
+    --pad-app: 28px 40px 80px;
+    --gap-section: 16px;
+    --kpi-num: 38px;
+    --hero-num: 88px;
+    --logo-bg: #fff;
+    --logo-invert: 0;
+    --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .055 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  *,*::before,*::after{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    min-height: 100vh;
+    position: relative;
+  }
+  body::before{
+    content:""; position: fixed; inset:0; pointer-events:none;
+    background-image: var(--grain); opacity: var(--grain-opacity); z-index:0; mix-blend-mode: overlay;
+  }
+  .mono{ font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+  /* ===== Layout ===== */
+  .app{ position:relative; z-index:1; max-width: 1440px; margin: 0 auto; padding: var(--pad-app); }
+
+  /* ===== THEME: LIGHT ===== */
+  body.theme-light{
+    --bg: #F6F3EC;
+    --bg-2: #EFECE3;
+    --surface: #FFFFFF;
+    --surface-2: #F2EFE7;
+    --border: #E2DED3;
+    --border-2: #CFCABE;
+    --text: #15140F;
+    --text-2: #5A554D;
+    --text-3: #908B82;
+    --pass: #2F8F3E;
+    --pass-bg: rgba(47, 143, 62, 0.10);
+    --fail: #D43A28;
+    --fail-bg: rgba(212, 58, 40, 0.08);
+    --skip: #B57F12;
+    --skip-bg: rgba(181, 127, 18, 0.10);
+    --info: #2F6FC4;
+    --grain-opacity: .25;
+    --logo-bg: #15140F;
+  }
+
+  /* ===== THEME: STAGE (deep black + glow) ===== */
+  body.theme-stage{
+    --bg: #000000;
+    --bg-2: #050505;
+    --surface: #0C0C0E;
+    --surface-2: #131316;
+    --border: #1A1A1F;
+    --border-2: #28282F;
+    --text: #FFFFFF;
+    --text-2: #B8B5B0;
+    --text-3: #6E6B68;
+    --grain-opacity: .35;
+    --card-radius: 4px;
+    --hero-num: 104px;
+  }
+  body.theme-stage .pass-card::before,
+  body.theme-stage .test-item .status,
+  body.theme-stage .brand .mark{
+    box-shadow: 0 0 24px var(--accent);
+  }
+  body.theme-stage .pass-card h1 .pct{ text-shadow: 0 0 28px var(--accent); }
+  body.theme-stage .ring svg circle:not([stroke="var(--border-2)"]){ filter: drop-shadow(0 0 6px currentColor); }
+  body.theme-stage .test-item .status.pass{ box-shadow: 0 0 14px var(--pass); }
+  body.theme-stage .test-item .status.fail{ box-shadow: 0 0 14px var(--fail); }
+  body.theme-stage .test-item .status.skip{ box-shadow: 0 0 14px var(--skip); }
+
+  /* ===== STYLE: MONOCHROME ===== */
+  body.style-mono{
+    --pass: var(--text);
+    --fail: var(--text);
+    --skip: var(--text-2);
+    --info: var(--text-2);
+    --pass-bg: rgba(255,255,255,.06);
+    --fail-bg: rgba(255,255,255,.06);
+    --skip-bg: rgba(255,255,255,.04);
+  }
+  body.style-mono.theme-light{
+    --pass-bg: rgba(0,0,0,.06);
+    --fail-bg: rgba(0,0,0,.06);
+    --skip-bg: rgba(0,0,0,.04);
+  }
+  body.style-mono .test-item .status.pass{ background: var(--text); box-shadow: none; }
+  body.style-mono .test-item .status.fail{
+    background: transparent; border: 1.5px solid var(--text); box-shadow: none;
+    width: 9px; height: 9px;
+  }
+  body.style-mono .test-item .status.skip{
+    background: transparent; border: 1.5px dashed var(--text-2); box-shadow: none;
+    width: 9px; height: 9px;
+  }
+  body.style-mono .tl-bar .fill.pass{ background: var(--text); }
+  body.style-mono .tl-bar .fill.fail{
+    background: repeating-linear-gradient(45deg, var(--text) 0 3px, transparent 3px 6px);
+  }
+  body.style-mono .tl-bar .fill.skip{
+    background: repeating-linear-gradient(90deg, var(--text-2) 0 2px, transparent 2px 4px);
+  }
+
+  /* ===== STYLE: GRAFANA (data-dense) ===== */
+  body.style-grafana{
+    --card-radius: 4px;
+    --pad-card: 14px;
+    --gap-section: 8px;
+    --hero-num: 64px;
+    --kpi-num: 28px;
+    font-size: 13px;
+  }
+  body.style-grafana .topbar{ border-radius: 4px; padding: 12px 16px; margin-bottom: 12px; }
+  body.style-grafana .pass-card{ padding: 20px 22px; }
+  body.style-grafana .kpi{ padding: 14px 16px; }
+  body.style-grafana .section-h{ padding: 14px 4px 8px; }
+  body.style-grafana .test-item{ padding: 9px 16px; }
+  body.style-grafana .env-cell{ padding: 12px 16px; }
+  body.style-grafana .card-body{ padding: 14px 16px; }
+
+  /* ===== DENSITY: COMPACT ===== */
+  body.density-compact{
+    --pad-app: 18px 24px 48px;
+    --pad-card: 16px;
+    --gap-section: 10px;
+  }
+  body.density-compact .topbar{ padding: 12px 16px; margin-bottom: 14px; }
+  body.density-compact .test-item{ padding: 10px 18px; }
+  body.density-compact .pass-card{ padding: 22px 26px; }
+  body.density-compact .kpi{ padding: 16px 18px; }
+
+  /* ===== Header ===== */
+  .topbar{
+    display:flex; align-items:center; gap: 28px;
+    padding: 18px 22px;
+    background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0)) , var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 24px;
+  }
+  .brand{ display:flex; align-items:center; gap: 14px; }
+  .brand .mark{
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--logo-bg) url('assets/logo_ravilesx.png') center/cover no-repeat;
+    border: 1px solid var(--border-2);
+    box-shadow: 0 0 0 3px rgba(255,255,255,.02), 0 8px 22px rgba(255,77,46,.18);
+    filter: invert(var(--logo-invert));
+  }
+  .brand .wordmark{ display:flex; flex-direction:column; line-height:1; }
+  .brand .wordmark b{ font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+  .brand .wordmark b span{ color: var(--accent); }
+  .brand .wordmark small{ font-size: 11px; color: var(--text-3); letter-spacing: .12em; text-transform: uppercase; margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+  .divider{ width: 1px; height: 32px; background: var(--border-2); }
+
+  .crumbs{ display:flex; align-items:center; gap: 12px; color: var(--text-2); font-size: 13px; }
+  .crumbs .pill{
+    display:inline-flex; align-items:center; gap: 6px;
+    padding: 5px 10px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border-2);
+    color: var(--text-2); font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .crumbs .pill .dot{ width:6px; height:6px; border-radius:50%; background: var(--pass); box-shadow: 0 0 8px var(--pass); }
+
+  .topbar .spacer{ flex: 1; }
+
+  .search{
+    display:flex; align-items:center; gap: 10px;
+    background: var(--bg-2); border: 1px solid var(--border-2);
+    padding: 8px 14px; border-radius: 999px; width: 280px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .search:focus-within{ border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,77,46,.12); }
+  .search svg{ width:14px; height:14px; color: var(--text-3); }
+  .search input{
+    flex:1; background: transparent; border:0; color: var(--text); outline: none;
+    font-family: inherit; font-size: 13px;
+  }
+  .search input::placeholder{ color: var(--text-3); }
+  .search kbd{
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-3);
+    border: 1px solid var(--border-2); border-radius: 4px; padding: 1px 5px;
+  }
+
+  .meta{ display:flex; align-items:center; gap: 14px; color: var(--text-2); font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+  .meta .stamp{ display:flex; flex-direction:column; align-items:flex-end; line-height:1.3; }
+  .meta .stamp b{ color: var(--text); font-weight:500; font-size: 13px; }
+  .meta .stamp small{ font-size: 10px; color: var(--text-3); letter-spacing: .1em; text-transform: uppercase; }
+
+  /* ===== Hero ===== */
+  .hero{
+    display:grid; grid-template-columns: 1.4fr 1fr; gap: var(--gap-section);
+    margin-bottom: var(--gap-section);
+  }
+
+  .pass-card{
+    position: relative; overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--card-radius) + 4px);
+    padding: 28px 32px;
+    display:grid; grid-template-columns: 1fr auto; gap: 32px; align-items:center;
+  }
+  .pass-card::before{
+    content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  }
+  .pass-card .label{
+    font-size: 11px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--text-3); font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 14px;
+  }
+  .pass-card h1{
+    font-size: var(--hero-num); line-height: .9; margin: 0;
+    font-weight: 600; letter-spacing: -0.04em;
+    font-feature-settings: "tnum";
+  }
+  .pass-card h1 .pct{ color: var(--accent); font-size: 44px; vertical-align: top; margin-left: 6px; }
+  .pass-card .sub{ color: var(--text-2); margin-top: 14px; font-size: 14px; max-width: 360px; }
+  .pass-card .sub b{ color: var(--text); font-weight:500; }
+
+  .ring{ position:relative; width: 180px; height: 180px; }
+  .ring svg{ transform: rotate(-90deg); }
+  .ring .center{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ring .center b{ font-size: 24px; font-weight: 600; }
+  .ring .center small{ font-size: 10px; color: var(--text-3); letter-spacing: .14em; text-transform: uppercase; }
+
+  .kpi-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap-section); }
+  .kpi{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 20px 22px;
+    position: relative; overflow: hidden;
+  }
+  .kpi .label{
+    display:flex; align-items:center; gap:8px;
+    font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--text-3); font-family: 'JetBrains Mono', monospace;
+  }
+  .kpi .icn{ width: 14px; height: 14px; opacity: .9; }
+  .kpi .value{
+    font-size: var(--kpi-num); font-weight: 600; letter-spacing: -0.03em;
+    margin-top: 10px; line-height: 1;
+    font-feature-settings: "tnum";
+  }
+  .kpi .foot{ display:flex; align-items:center; gap: 8px; margin-top: 12px; font-size: 12px; color: var(--text-2); }
+  .kpi .chip{
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border-2);
+    background: var(--surface-2); color: var(--text-2);
+  }
+  .kpi.fail .value{ color: var(--fail); }
+  .kpi.skip .value{ color: var(--skip); }
+  .kpi.pass .value{ color: var(--pass); }
+  .kpi.dur .value{ color: var(--text); }
+  .kpi.fail .chip{ color: var(--fail); border-color: rgba(255,91,74,.3); background: var(--fail-bg); }
+  .kpi.skip .chip{ color: var(--skip); border-color: rgba(255,200,87,.3); background: var(--skip-bg); }
+  .kpi.pass .chip{ color: var(--pass); border-color: rgba(107,224,124,.3); background: var(--pass-bg); }
+
+  /* ===== Card primitive ===== */
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    overflow: hidden;
+  }
+  .card-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-head h3{
+    margin:0; font-size: 14px; font-weight: 600; letter-spacing: -0.01em;
+    display:flex; align-items:center; gap:10px;
+  }
+  .card-head h3 .num{
+    font-family: 'JetBrains Mono', monospace; font-weight: 500;
+    color: var(--text-3); font-size: 12px; margin-left: 4px;
+  }
+  .card-head .actions{ display:flex; align-items:center; gap: 6px; }
+  .tab{
+    font-size: 11px; padding: 5px 10px; border-radius: 6px;
+    color: var(--text-3); cursor: pointer; user-select:none;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: .08em; text-transform: uppercase;
+    border: 1px solid transparent;
+  }
+  .tab.active{ background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
+  .tab:hover:not(.active){ color: var(--text-2); }
+  .card-body{ padding: 22px; }
+
+  /* ===== Distribution row ===== */
+  .row-2{ display:grid; grid-template-columns: 1fr 1.4fr; gap: var(--gap-section); margin-top: var(--gap-section); }
+
+  .legend{ display:flex; flex-direction:column; gap: 14px; }
+  .legend .item{ display:flex; align-items:center; justify-content:space-between; padding: 10px 0; border-bottom: 1px dashed var(--border-2); }
+  .legend .item:last-child{ border-bottom: 0; }
+  .legend .l{ display:flex; align-items:center; gap: 10px; }
+  .legend .swatch{ width: 10px; height: 10px; border-radius: 2px; }
+  .legend .name{ font-size: 13px; color: var(--text-2); }
+  .legend .r{ display:flex; align-items:baseline; gap: 8px; }
+  .legend .r b{ font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  .legend .r small{ color: var(--text-3); font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+
+  /* timeline */
+  .timeline{ display:flex; flex-direction:column; gap: 10px; }
+  .tl-row{
+    display:grid; grid-template-columns: 1.8fr 3fr 64px; gap: 14px; align-items:center;
+    padding: 6px 0;
+  }
+  .tl-row .nm{
+    font-size: 13px; color: var(--text); overflow:hidden; white-space:nowrap; text-overflow: ellipsis;
+  }
+  .tl-row .nm .ix{ color: var(--text-3); font-family: 'JetBrains Mono', monospace; margin-right: 8px; font-size: 11px; }
+  .tl-bar{ position:relative; height: 14px; background: var(--bg-2); border-radius: 4px; overflow: hidden; }
+  .tl-bar .fill{ position:absolute; left:0; top:0; bottom:0; border-radius: 4px; }
+  .tl-bar .fill.pass{ background: linear-gradient(90deg, rgba(107,224,124,.4), var(--pass)); }
+  .tl-bar .fill.fail{ background: linear-gradient(90deg, rgba(255,91,74,.4), var(--fail)); }
+  .tl-bar .fill.skip{ background: linear-gradient(90deg, rgba(255,200,87,.4), var(--skip)); }
+  .tl-row .dur{ font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-2); text-align:right; }
+
+  /* ===== Tests list ===== */
+  .tests{ margin-top: var(--gap-section); }
+  .filter-row{
+    display:flex; align-items:center; gap: 8px; padding: 0 4px;
+  }
+  .chip-filter{
+    display:inline-flex; align-items:center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border-2);
+    color: var(--text-2); font-size: 12px;
+    cursor: pointer; user-select:none;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all .15s;
+  }
+  .chip-filter .ct{ color: var(--text-3); font-size: 11px; }
+  .chip-filter.active{ color: var(--text); background: var(--surface); border-color: var(--border-2); }
+  .chip-filter.active.pass{ border-color: rgba(107,224,124,.4); color: var(--pass); }
+  .chip-filter.active.fail{ border-color: rgba(255,91,74,.4); color: var(--fail); }
+  .chip-filter.active.skip{ border-color: rgba(255,200,87,.4); color: var(--skip); }
+  .chip-filter .dot{ width: 7px; height: 7px; border-radius: 50%; }
+  .chip-filter .dot.pass{ background: var(--pass); }
+  .chip-filter .dot.fail{ background: var(--fail); }
+  .chip-filter .dot.skip{ background: var(--skip); }
+  .chip-filter .dot.all{ background: var(--text-2); }
+
+  .test-list{ display:flex; flex-direction:column; }
+  .test-item{
+    display:grid; grid-template-columns: 28px 1fr 130px 110px 70px 18px;
+    align-items:center; gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .12s;
+    position: relative;
+  }
+  .test-item:hover{ background: rgba(255,255,255,.015); }
+  .test-item:last-child{ border-bottom: 0; }
+  .test-item .status{
+    width: 10px; height: 10px; border-radius: 50%;
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  .test-item .status.pass{ background: var(--pass); box-shadow: 0 0 10px rgba(107,224,124,.5); }
+  .test-item .status.fail{ background: var(--fail); box-shadow: 0 0 10px rgba(255,91,74,.5); }
+  .test-item .status.skip{ background: var(--skip); box-shadow: 0 0 10px rgba(255,200,87,.5); }
+  .test-item .name{ font-size: 14px; font-weight: 500; }
+  .test-item .name .id{
+    font-family: 'JetBrains Mono', monospace; color: var(--text-3);
+    font-size: 11px; font-weight: 400; margin-right: 10px;
+  }
+  .test-item .tags{ display:flex; gap: 6px; margin-top: 4px; }
+  .test-item .tag{
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    padding: 1px 7px; border-radius: 3px; color: var(--text-2);
+    background: var(--surface-2); border: 1px solid var(--border-2);
+  }
+  .test-item .ts{ font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-2); }
+  .test-item .dur{ font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-2); text-align:right; }
+  .test-item .badge{
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    padding: 3px 9px; border-radius: 4px; letter-spacing: .08em; text-transform: uppercase; text-align:center;
+  }
+  .test-item .badge.pass{ background: var(--pass-bg); color: var(--pass); }
+  .test-item .badge.fail{ background: var(--fail-bg); color: var(--fail); }
+  .test-item .badge.skip{ background: var(--skip-bg); color: var(--skip); }
+  .test-item .chev{ color: var(--text-3); transition: transform .2s; font-size: 14px; }
+  .test-item.open .chev{ transform: rotate(90deg); }
+
+  .test-detail{
+    grid-column: 1 / -1;
+    display: none;
+    padding: 4px 0 20px 42px;
+  }
+  .test-item.open + .test-detail{ display: block; }
+  .test-detail .meta-strip{
+    display:flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+  }
+  .test-detail .meta-strip .mk{
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 4px 10px; border-radius: 4px; background: var(--surface-2); color: var(--text-2);
+    border: 1px solid var(--border-2);
+  }
+  .test-detail .meta-strip .mk b{ color: var(--text); font-weight: 500; margin-right: 4px; }
+  .detail-grid{
+    display:grid; grid-template-columns: 220px 1fr; gap: 22px; align-items:start;
+  }
+  .shot{
+    aspect-ratio: 16/10; border-radius: 8px; overflow:hidden;
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 8px, transparent 8px 16px),
+      linear-gradient(135deg, #1a1a20, #0e0e12);
+    border: 1px solid var(--border-2);
+    display:flex; align-items:center; justify-content:center; color: var(--text-3);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    text-align:center; padding: 10px;
+  }
+  .events{ }
+  .events table{ width:100%; border-collapse: collapse; font-size: 13px; }
+  .events th{
+    text-align:left; font-weight: 500; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--text-3); padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    border-bottom: 1px solid var(--border-2);
+  }
+  .events td{
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    color: var(--text-2); vertical-align: top;
+  }
+  .events tr:last-child td{ border-bottom: 0; }
+  .events td.s .pill{
+    display:inline-block;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 3px;
+  }
+  .events td.s .pill.pass{ background: var(--pass-bg); color: var(--pass); }
+  .events td.s .pill.fail{ background: var(--fail-bg); color: var(--fail); }
+  .events td.s .pill.info{ background: rgba(122,182,255,.10); color: var(--info); }
+  .events td.t{ font-family: 'JetBrains Mono', monospace; color: var(--text-3); white-space:nowrap; }
+  .events td.d code{
+    background: var(--bg-2); padding: 1px 6px; border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text);
+    border: 1px solid var(--border-2);
+  }
+  .stack{
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    background: var(--bg-2); padding: 10px 12px; border-radius: 6px;
+    border: 1px solid var(--border-2); color: #ffb8ad; white-space: pre-wrap;
+    margin-top: 6px;
+  }
+
+  /* ===== Environment ===== */
+  .env-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+  .env-cell{
+    padding: 18px 22px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .env-cell:nth-child(4n){ border-right: 0; }
+  .env-cell:nth-last-child(-n+4){ border-bottom: 0; }
+  .env-cell .k{
+    font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--text-3); font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 6px;
+  }
+  .env-cell .v{ font-size: 14px; color: var(--text); font-weight: 500; }
+  .env-cell .v .mono{ color: var(--text-2); font-size: 13px; }
+
+  /* footer */
+  footer{
+    margin-top: 36px; padding: 20px 4px;
+    display:flex; align-items:center; justify-content:space-between;
+    color: var(--text-3); font-size: 12px; font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid var(--border);
+  }
+  footer .sig{ display:flex; align-items:center; gap: 10px; }
+  footer .sig .mk{
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #fff url('assets/logo_ravilesx.png') center/cover no-repeat;
+  }
+  footer .right{ display:flex; gap: 18px; }
+
+  /* Section header */
+  .section-h{ display:flex; align-items:baseline; justify-content:space-between; padding: 24px 4px 12px; }
+  .section-h h2{
+    font-size: 12px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--text-3); margin: 0; font-family: 'JetBrains Mono', monospace;
+  }
+  .section-h .line{ flex:1; height:1px; background: var(--border); margin: 0 18px; }
+  .section-h small{ color: var(--text-3); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  /* utility */
+  .hide{ display:none !important; }
+
+  /* ===== Tweaks panel ===== */
+  .tweaks-panel{
+    position: fixed; right: 20px; bottom: 20px; z-index: 200;
+    width: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.3);
+    color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    display: none;
+    overflow: hidden;
+  }
+  body.theme-light .tweaks-panel{ box-shadow: 0 24px 60px rgba(0,0,0,.18), 0 4px 12px rgba(0,0,0,.08); }
+  .tweaks-panel.open{ display: block; }
+  .tweaks-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    cursor: move; user-select:none;
+  }
+  .tweaks-head b{ font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+  .tweaks-head .x{
+    width: 22px; height: 22px; display:flex; align-items:center; justify-content:center;
+    border-radius: 4px; cursor: pointer; color: var(--text-3);
+  }
+  .tweaks-head .x:hover{ background: var(--surface-2); color: var(--text); }
+  .tweaks-body{ padding: 14px 16px 18px; max-height: 70vh; overflow-y: auto; }
+  .tw-section{ margin-bottom: 16px; }
+  .tw-section:last-child{ margin-bottom: 0; }
+  .tw-label{
+    display:block; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--text-3); font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 8px;
+  }
+  .tw-radio{
+    display:flex; gap: 0; background: var(--bg-2);
+    border: 1px solid var(--border-2); border-radius: 8px; padding: 3px;
+  }
+  .tw-radio button{
+    flex:1; padding: 7px 10px; border:0; background: transparent;
+    color: var(--text-2); font-family: inherit; font-size: 12px;
+    cursor: pointer; border-radius: 5px; transition: all .15s;
+  }
+  .tw-radio button.active{ background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+  .tw-swatches{ display:flex; gap: 8px; }
+  .tw-swatch{
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 2px solid transparent; cursor: pointer;
+    position: relative; transition: transform .12s;
+  }
+  .tw-swatch:hover{ transform: translateY(-1px); }
+  .tw-swatch.active{ border-color: var(--text); }
+  .tw-swatch.active::after{
+    content:""; position:absolute; right:-4px; top:-4px;
+    width: 10px; height: 10px; border-radius: 50%; background: var(--text); border: 2px solid var(--surface);
+  }
+  .tw-swatch span{ display:block; width:100%; height:100%; border-radius: 6px; }
+
+  @media (max-width: 980px){
+    .hero{ grid-template-columns: 1fr; }
+    .kpi-grid{ grid-template-columns: 1fr 1fr; }
+    .row-2{ grid-template-columns: 1fr; }
+    .env-grid{ grid-template-columns: 1fr 1fr; }
+    .env-cell:nth-child(2n){ border-right: 0; }
+    .env-cell:nth-child(4n){ border-right: 1px solid var(--border); }
+    .test-item{ grid-template-columns: 18px 1fr 90px 24px; }
+    .test-item .ts, .test-item .dur{ display:none; }
+    .app{ padding: 16px; }
+    .topbar{ flex-wrap: wrap; }
+    .search{ width: 100%; order: 10; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- =============== TOP BAR =============== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"></div>
+      <div class="wordmark">
+        <b>Ravile<span>X</span></b>
+        <small>QA · Selenium Report</small>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="crumbs">
+      <span>Automation Suite</span>
+      <span style="color:var(--text-3)">/</span>
+      <span style="color:var(--text)">Smoke · Web</span>
+      <span class="pill"><span class="dot"></span> build #1284</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+      <input id="search-input" type="text" placeholder="Buscar test, tag, error…" />
+      <kbd>⌘ K</kbd>
+    </div>
+    <div class="meta">
+      <div class="stamp">
+        <small>Ejecutado</small>
+        <b>abr 29, 2026 · 20:30</b>
+      </div>
+    </div>
+  </header>
+
+  <!-- =============== HERO =============== -->
+  <section class="hero">
+    <div class="pass-card">
+      <div>
+        <div class="label">Pass rate</div>
+        <h1><span id="passPct">87.5</span><span class="pct">%</span></h1>
+        <div class="sub">De <b id="totalTests">24</b> tests ejecutados, <b id="passCountSub" style="color:var(--pass)">21</b> pasaron, <b id="failCountSub" style="color:var(--fail)">2</b> fallaron y <b id="skipCountSub" style="color:var(--skip)">1</b> fue omitido.</div>
+      </div>
+      <div class="ring" aria-hidden="true">
+        <svg width="180" height="180" viewBox="0 0 180 180">
+          <circle cx="90" cy="90" r="74" fill="none" stroke="var(--border-2)" stroke-width="10"/>
+          <circle id="ring-pass" cx="90" cy="90" r="74" fill="none" stroke="var(--pass)" stroke-width="10" stroke-linecap="round"
+                  stroke-dasharray="464.96" stroke-dashoffset="58" />
+          <circle id="ring-fail" cx="90" cy="90" r="74" fill="none" stroke="var(--fail)" stroke-width="10" stroke-linecap="round"
+                  stroke-dasharray="464.96" stroke-dashoffset="425" transform="rotate(195 90 90)"/>
+          <circle id="ring-skip" cx="90" cy="90" r="74" fill="none" stroke="var(--skip)" stroke-width="10" stroke-linecap="round"
+                  stroke-dasharray="464.96" stroke-dashoffset="445" transform="rotate(228 90 90)"/>
+        </svg>
+        <div class="center">
+          <b>21<span style="color:var(--text-3)">/24</span></b>
+          <small>Tests OK</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi pass">
+        <div class="label">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          Pasaron
+        </div>
+        <div class="value">21</div>
+        <div class="foot"><span class="chip">+3 vs prev</span><span>build #1283</span></div>
+      </div>
+      <div class="kpi fail">
+        <div class="label">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          Fallaron
+        </div>
+        <div class="value">2</div>
+        <div class="foot"><span class="chip">-1</span><span>regresión menor</span></div>
+      </div>
+      <div class="kpi skip">
+        <div class="label">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4v16"/><path d="M19 4v16"/><path d="M5 12h14"/></svg>
+          Omitidos
+        </div>
+        <div class="value">1</div>
+        <div class="foot"><span class="chip">@SkipBeta</span><span>feature-flag</span></div>
+      </div>
+      <div class="kpi dur">
+        <div class="label">
+          <svg class="icn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          Duración
+        </div>
+        <div class="value">02:47<span style="font-size:18px;color:var(--text-3)">.6</span></div>
+        <div class="foot"><span class="chip">Ø 6.9s/test</span><span>paralelismo 4</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============== DISTRIBUTION ROW =============== -->
+  <div class="row-2">
+    <div class="card">
+      <div class="card-head">
+        <h3>Distribución <span class="num">/ por estado</span></h3>
+        <div class="actions">
+          <span class="tab active">Tests</span>
+          <span class="tab">Eventos</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- horizontal stacked bar -->
+        <div style="height: 14px; display:flex; border-radius: 4px; overflow:hidden; background: var(--bg-2);">
+          <div style="width: 87.5%; background: linear-gradient(90deg, rgba(107,224,124,.5), var(--pass));"></div>
+          <div style="width: 8.3%; background: var(--fail);"></div>
+          <div style="width: 4.2%; background: var(--skip);"></div>
+        </div>
+        <div class="legend" style="margin-top: 18px;">
+          <div class="item">
+            <div class="l"><span class="swatch" style="background: var(--pass)"></span><span class="name">Pass</span></div>
+            <div class="r"><b>21</b><small>87.5%</small></div>
+          </div>
+          <div class="item">
+            <div class="l"><span class="swatch" style="background: var(--fail)"></span><span class="name">Fail</span></div>
+            <div class="r"><b style="color:var(--fail)">2</b><small>8.3%</small></div>
+          </div>
+          <div class="item">
+            <div class="l"><span class="swatch" style="background: var(--skip)"></span><span class="name">Skip</span></div>
+            <div class="r"><b style="color:var(--skip)">1</b><small>4.2%</small></div>
+          </div>
+          <div class="item">
+            <div class="l"><span class="swatch" style="background: var(--info)"></span><span class="name">Info events</span></div>
+            <div class="r"><b style="color:var(--info)">87</b><small>logs</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Timeline <span class="num">/ duración por test</span></h3>
+        <div class="actions">
+          <span class="tab active">Top 8</span>
+          <span class="tab">Todos</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="timeline" id="timeline">
+          <!-- filled via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== TESTS LIST =============== -->
+  <div class="section-h">
+    <h2>Casos de prueba</h2>
+    <div class="line"></div>
+    <small>24 tests · ordenados por ejecución</small>
+  </div>
+
+  <div class="card tests">
+    <div class="card-head">
+      <div class="filter-row">
+        <span class="chip-filter active" data-filter="all"><span class="dot all"></span> Todos <span class="ct">24</span></span>
+        <span class="chip-filter pass" data-filter="pass"><span class="dot pass"></span> Pass <span class="ct">21</span></span>
+        <span class="chip-filter fail" data-filter="fail"><span class="dot fail"></span> Fail <span class="ct">2</span></span>
+        <span class="chip-filter skip" data-filter="skip"><span class="dot skip"></span> Skip <span class="ct">1</span></span>
+      </div>
+      <div class="actions">
+        <span class="tab active">Recientes</span>
+        <span class="tab">Más lentos</span>
+        <span class="tab">A–Z</span>
+      </div>
+    </div>
+
+    <div class="test-list" id="test-list">
+      <!-- filled via JS -->
+    </div>
+  </div>
+
+  <!-- =============== ENVIRONMENT =============== -->
+  <div class="section-h">
+    <h2>System · Environment</h2>
+    <div class="line"></div>
+    <small>QA / Selenium Grid</small>
+  </div>
+
+  <div class="card">
+    <div class="env-grid">
+      <div class="env-cell"><div class="k">Framework</div><div class="v">Selenium 4 <span class="mono">· TestNG · Java 11</span></div></div>
+      <div class="env-cell"><div class="k">Ambiente</div><div class="v">QA <span class="mono">qa.ravilesx.dev</span></div></div>
+      <div class="env-cell"><div class="k">Browser</div><div class="v">Chrome <span class="mono">124.0.6367</span></div></div>
+      <div class="env-cell"><div class="k">Sistema</div><div class="v">macOS <span class="mono">14.4 · arm64</span></div></div>
+
+      <div class="env-cell"><div class="k">Runner</div><div class="v">GitHub Actions <span class="mono">ubuntu-latest</span></div></div>
+      <div class="env-cell"><div class="k">Branch</div><div class="v"><span class="mono">feature/checkout-v3</span></div></div>
+      <div class="env-cell"><div class="k">Commit</div><div class="v"><span class="mono">8f3c1ab</span></div></div>
+      <div class="env-cell"><div class="k">Trigger</div><div class="v">Pull Request <span class="mono">#412</span></div></div>
+
+      <div class="env-cell"><div class="k">Inicio</div><div class="v mono" style="font-size:13px;">2026-04-29 20:30:14</div></div>
+      <div class="env-cell"><div class="k">Fin</div><div class="v mono" style="font-size:13px;">2026-04-29 20:33:02</div></div>
+      <div class="env-cell"><div class="k">Tester</div><div class="v">Raviles<span style="color:var(--accent)">X</span></div></div>
+      <div class="env-cell"><div class="k">Reporter</div><div class="v">ExtentReports <span class="mono">5.1.0</span></div></div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="sig">
+      <div class="mk" aria-hidden="true"></div>
+      <span>Generated by <b style="color:var(--text)">RavilesX</b> · Selenium Java Framework</span>
+    </div>
+    <div class="right">
+      <span>v2.4.1</span>
+      <span>© 2026</span>
+    </div>
+  </footer>
+</div>
+
+<!-- ===== Tweaks Panel ===== -->
+<div class="tweaks-panel" id="tweaks-panel" role="dialog" aria-label="Tweaks">
+  <div class="tweaks-head" id="tweaks-drag">
+    <b>Tweaks</b>
+    <div class="x" id="tweaks-close" title="Close">×</div>
+  </div>
+  <div class="tweaks-body">
+    <div class="tw-section">
+      <span class="tw-label">Tema</span>
+      <div class="tw-radio" data-tweak="theme">
+        <button data-value="dark">Dark</button>
+        <button data-value="light">Light</button>
+        <button data-value="stage">Stage</button>
+      </div>
+    </div>
+
+    <div class="tw-section">
+      <span class="tw-label">Color de acento</span>
+      <div class="tw-swatches" data-tweak="accent">
+        <div class="tw-swatch" data-value="crimson" title="Crimson"><span style="background:linear-gradient(135deg,#FF4D2E,#FF7A4D)"></span></div>
+        <div class="tw-swatch" data-value="neon" title="Neon"><span style="background:linear-gradient(135deg,#5BE08C,#9DF06B)"></span></div>
+        <div class="tw-swatch" data-value="electric" title="Electric"><span style="background:linear-gradient(135deg,#4D8FFF,#7AB6FF)"></span></div>
+        <div class="tw-swatch" data-value="magenta" title="Magenta"><span style="background:linear-gradient(135deg,#FF4D9F,#FF7AB8)"></span></div>
+      </div>
+    </div>
+
+    <div class="tw-section">
+      <span class="tw-label">Estilo visual</span>
+      <div class="tw-radio" data-tweak="style">
+        <button data-value="editorial">Editorial</button>
+        <button data-value="mono">Mono</button>
+        <button data-value="grafana">Grafana</button>
+      </div>
+    </div>
+
+    <div class="tw-section">
+      <span class="tw-label">Densidad</span>
+      <div class="tw-radio" data-tweak="density">
+        <button data-value="cozy">Cozy</button>
+        <button data-value="compact">Compact</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== Tweaks defaults (persisted via host) =====
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "theme": "dark",
+    "accent": "electric",
+    "style": "grafana",
+    "density": "compact"
+  }/*EDITMODE-END*/;
+
+  const ACCENTS = {
+    crimson:  { a: "#FF4D2E", b: "#FF7A4D", glow: "rgba(255,77,46,.18)" },
+    neon:     { a: "#5BE08C", b: "#9DF06B", glow: "rgba(91,224,140,.20)" },
+    electric: { a: "#4D8FFF", b: "#7AB6FF", glow: "rgba(77,143,255,.22)" },
+    magenta:  { a: "#FF4D9F", b: "#FF7AB8", glow: "rgba(255,77,159,.20)" }
+  };
+
+  const tweaks = { ...TWEAK_DEFAULTS };
+
+  function applyTweaks() {
+    const body = document.body;
+    // theme
+    body.classList.remove("theme-dark","theme-light","theme-stage");
+    body.classList.add("theme-" + tweaks.theme);
+    // style
+    body.classList.remove("style-editorial","style-mono","style-grafana");
+    body.classList.add("style-" + tweaks.style);
+    // density
+    body.classList.remove("density-cozy","density-compact");
+    body.classList.add("density-" + tweaks.density);
+    // accent
+    const ac = ACCENTS[tweaks.accent] || ACCENTS.crimson;
+    document.documentElement.style.setProperty("--accent", ac.a);
+    document.documentElement.style.setProperty("--accent-2", ac.b);
+    // adjust pass-card hero pct color when style is mono (use text)
+    // Refresh active button states
+    document.querySelectorAll(".tw-radio").forEach(g => {
+      const key = g.dataset.tweak;
+      g.querySelectorAll("button").forEach(b => {
+        b.classList.toggle("active", b.dataset.value === tweaks[key]);
+      });
+    });
+    document.querySelectorAll(".tw-swatches").forEach(g => {
+      const key = g.dataset.tweak;
+      g.querySelectorAll(".tw-swatch").forEach(s => {
+        s.classList.toggle("active", s.dataset.value === tweaks[key]);
+      });
+    });
+  }
+
+  function setTweak(key, value) {
+    tweaks[key] = value;
+    applyTweaks();
+    try {
+      window.parent.postMessage({ type: "__edit_mode_set_keys", edits: { [key]: value } }, "*");
+    } catch (e) {}
+  }
+
+  // Wire controls
+  document.querySelectorAll(".tw-radio").forEach(g => {
+    const key = g.dataset.tweak;
+    g.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => setTweak(key, btn.dataset.value));
+    });
+  });
+  document.querySelectorAll(".tw-swatches").forEach(g => {
+    const key = g.dataset.tweak;
+    g.querySelectorAll(".tw-swatch").forEach(sw => {
+      sw.addEventListener("click", () => setTweak(key, sw.dataset.value));
+    });
+  });
+
+  // Initial apply
+  applyTweaks();
+
+  // Panel drag
+  (function(){
+    const panel = document.getElementById("tweaks-panel");
+    const head = document.getElementById("tweaks-drag");
+    let drag=null;
+    head.addEventListener("mousedown", e => {
+      if (e.target.id === "tweaks-close") return;
+      const rect = panel.getBoundingClientRect();
+      drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+      e.preventDefault();
+    });
+    window.addEventListener("mousemove", e => {
+      if (!drag) return;
+      panel.style.left = (e.clientX - drag.dx) + "px";
+      panel.style.top  = (e.clientY - drag.dy) + "px";
+      panel.style.right = "auto"; panel.style.bottom = "auto";
+    });
+    window.addEventListener("mouseup", () => drag = null);
+  })();
+
+  // Host protocol — register listener BEFORE announcing availability
+  window.addEventListener("message", (e) => {
+    const t = e.data && e.data.type;
+    if (t === "__activate_edit_mode") {
+      document.getElementById("tweaks-panel").classList.add("open");
+    } else if (t === "__deactivate_edit_mode") {
+      document.getElementById("tweaks-panel").classList.remove("open");
+    }
+  });
+  document.getElementById("tweaks-close").addEventListener("click", () => {
+    document.getElementById("tweaks-panel").classList.remove("open");
+    try { window.parent.postMessage({ type: "__edit_mode_dismissed" }, "*"); } catch(e){}
+  });
+  try { window.parent.postMessage({ type: "__edit_mode_available" }, "*"); } catch(e){}
+</script>
+
+<script>
+  // ---------- Data ----------
+  const tests = [
+    { id: 1,  name: "Validate Google main logo is present on google.com.mx", status: "pass", time: "20:30:19", dur: 1.668, tags: ["@smoke","@ui"],
+      events: [
+        {s:"info", t:"20:30:19.220", d:"Launching Chrome driver"},
+        {s:"info", t:"20:30:19.480", d:"Navigate to <code>https://www.google.com.mx</code>"},
+        {s:"info", t:"20:30:20.110", d:"Locate element <code>img[alt='Google']</code>"},
+        {s:"pass", t:"20:30:20.888", d:"Logo visible — assertion isDisplayed() = true"},
+      ]},
+    { id: 2,  name: "Login con credenciales válidas", status: "pass", time: "20:30:21", dur: 4.221, tags: ["@regression","@auth"] },
+    { id: 3,  name: "Login con password inválido muestra error", status: "pass", time: "20:30:25", dur: 3.104, tags: ["@regression","@auth"] },
+    { id: 4,  name: "Recuperar contraseña vía email", status: "pass", time: "20:30:28", dur: 5.842, tags: ["@auth"] },
+    { id: 5,  name: "Filtrar productos por categoría 'Audio'", status: "pass", time: "20:30:34", dur: 6.991, tags: ["@catalog"] },
+    { id: 6,  name: "Buscar 'Telecaster' devuelve resultados", status: "pass", time: "20:30:41", dur: 2.553, tags: ["@catalog","@search"] },
+    { id: 7,  name: "Agregar producto al carrito desde detalle", status: "pass", time: "20:30:44", dur: 4.420, tags: ["@cart"] },
+    { id: 8,  name: "Actualizar cantidad en el carrito", status: "pass", time: "20:30:48", dur: 3.117, tags: ["@cart"] },
+    { id: 9,  name: "Eliminar item del carrito", status: "pass", time: "20:30:52", dur: 2.014, tags: ["@cart"] },
+    { id: 10, name: "Aplicar cupón de descuento 'ROCK10'", status: "pass", time: "20:30:54", dur: 3.802, tags: ["@cart","@promo"] },
+    { id: 11, name: "Proceso de checkout — tarjeta de crédito", status: "fail", time: "20:30:58", dur: 14.226, tags: ["@checkout","@critical"],
+      err: "AssertionError: Expected status code 200 but received 504\n  at CheckoutTest.completePayment (CheckoutTest.java:142)\n  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+      events: [
+        {s:"info", t:"20:30:58.012", d:"Navigate to <code>/checkout</code>"},
+        {s:"info", t:"20:30:59.553", d:"Fill billing form (5 fields)"},
+        {s:"info", t:"20:31:02.118", d:"Submit payment — provider: stripe-test"},
+        {s:"fail", t:"20:31:12.238", d:"Gateway timeout · expected 200 got 504"},
+      ]},
+    { id: 12, name: "Proceso de checkout — PayPal", status: "pass", time: "20:31:13", dur: 8.844, tags: ["@checkout"] },
+    { id: 13, name: "Validar email de confirmación", status: "pass", time: "20:31:22", dur: 6.221, tags: ["@email","@checkout"] },
+    { id: 14, name: "Cancelar pedido desde 'Mis órdenes'", status: "pass", time: "20:31:29", dur: 4.012, tags: ["@account"] },
+    { id: 15, name: "Editar dirección de envío", status: "pass", time: "20:31:33", dur: 3.501, tags: ["@account"] },
+    { id: 16, name: "Subir avatar — validar imagen recortada", status: "pass", time: "20:31:37", dur: 5.917, tags: ["@account","@ui"] },
+    { id: 17, name: "Suscripción a newsletter", status: "pass", time: "20:31:43", dur: 1.404, tags: ["@marketing"] },
+    { id: 18, name: "Compartir producto en redes sociales", status: "skip", time: "20:31:45", dur: 0.000, tags: ["@social","@flag:beta"] },
+    { id: 19, name: "Wishlist — agregar y persistir tras logout", status: "pass", time: "20:31:45", dur: 7.882, tags: ["@account"] },
+    { id: 20, name: "Soporte chat widget se abre desde footer", status: "pass", time: "20:31:53", dur: 2.220, tags: ["@support"] },
+    { id: 21, name: "Cambiar idioma a Inglés", status: "pass", time: "20:31:55", dur: 1.992, tags: ["@i18n"] },
+    { id: 22, name: "Modo oscuro persiste en localStorage", status: "pass", time: "20:31:57", dur: 1.554, tags: ["@ui"] },
+    { id: 23, name: "Validar accesibilidad página de inicio (WCAG AA)", status: "fail", time: "20:31:59", dur: 12.451, tags: ["@a11y","@critical"],
+      err: "AxeViolation: 'color-contrast' — 3 nodes below 4.5:1\n  at AccessibilityTest.runAxe (AccessibilityTest.java:88)" },
+    { id: 24, name: "Performance — Largest Contentful Paint < 2.5s", status: "pass", time: "20:32:11", dur: 9.124, tags: ["@perf"] }
+  ];
+
+  // ---------- Build timeline ----------
+  const tlEl = document.getElementById("timeline");
+  const topTests = [...tests].sort((a,b)=>b.dur-a.dur).slice(0,8);
+  const maxDur = Math.max(...topTests.map(t=>t.dur));
+  topTests.forEach((t, i) => {
+    const w = Math.max(2, (t.dur / maxDur) * 100);
+    const fillClass = t.status;
+    const row = document.createElement("div");
+    row.className = "tl-row";
+    row.innerHTML = `
+      <div class="nm"><span class="ix mono">#${String(t.id).padStart(2,"0")}</span>${t.name}</div>
+      <div class="tl-bar"><div class="fill ${fillClass}" style="width:${w}%"></div></div>
+      <div class="dur">${t.dur.toFixed(2)}s</div>
+    `;
+    tlEl.appendChild(row);
+  });
+
+  // ---------- Build test list ----------
+  const listEl = document.getElementById("test-list");
+  function badgeLabel(s){ return s === "pass" ? "Pass" : s === "fail" ? "Fail" : "Skip"; }
+  function fmtDur(s){
+    if(!s) return "—";
+    if(s < 60) return s.toFixed(2) + "s";
+    const m = Math.floor(s/60), r = (s%60).toFixed(0).padStart(2,"0");
+    return `${m}:${r}m`;
+  }
+
+  tests.forEach(t => {
+    const item = document.createElement("div");
+    item.className = "test-item";
+    item.dataset.status = t.status;
+    item.innerHTML = `
+      <span class="status ${t.status}"></span>
+      <div>
+        <div class="name"><span class="id mono">#${String(t.id).padStart(2,"0")}</span>${t.name}</div>
+        <div class="tags">${(t.tags||[]).map(tg=>`<span class="tag">${tg}</span>`).join("")}</div>
+      </div>
+      <div class="ts">${t.time}</div>
+      <div class="dur">${fmtDur(t.dur)}</div>
+      <div class="badge ${t.status}">${badgeLabel(t.status)}</div>
+      <span class="chev">›</span>
+    `;
+    listEl.appendChild(item);
+
+    // detail block
+    const det = document.createElement("div");
+    det.className = "test-detail";
+    const ev = t.events || [
+      {s:"info", t:t.time+".000", d:"Setup driver & navigate"},
+      {s:"info", t:t.time+".310", d:"Locate elements"},
+      {s: t.status === "skip" ? "info" : t.status, t:t.time+".980", d: t.status === "fail" ? "Assertion failed — ver stack trace" : t.status === "skip" ? "Test omitido — feature flag desactivado" : "Test pasado correctamente"},
+    ];
+    det.innerHTML = `
+      <div class="meta-strip">
+        <span class="mk"><b>Start</b>2026-04-29 ${t.time}</span>
+        <span class="mk"><b>Duration</b>${fmtDur(t.dur)}</span>
+        <span class="mk"><b>Thread</b>main-${(t.id%4)+1}</span>
+        <span class="mk"><b>Author</b>RavilesX</span>
+        <span class="mk"><b>Test-Id</b>${String(t.id).padStart(4,"0")}</span>
+      </div>
+      <div class="detail-grid">
+        <div class="shot">${t.status === "fail" ? "FAILURE SCREENSHOT" : t.status === "skip" ? "NO SCREENSHOT · SKIPPED" : "EVIDENCE · SCREENSHOT"}<br><span style="color:var(--text-2);font-size:9px;margin-top:6px;display:block;">testcase_${String(t.id).padStart(2,"0")}_${t.time.replace(/:/g,"_")}.png</span></div>
+        <div class="events">
+          <table>
+            <thead><tr><th style="width:90px;">Status</th><th style="width:130px;">Timestamp</th><th>Details</th></tr></thead>
+            <tbody>
+              ${ev.map(e=>`<tr><td class="s"><span class="pill ${e.s}">${e.s}</span></td><td class="t">${e.t}</td><td class="d">${e.d}</td></tr>`).join("")}
+            </tbody>
+          </table>
+          ${t.err ? `<div class="stack">${t.err}</div>` : ""}
+        </div>
+      </div>
+    `;
+    listEl.appendChild(det);
+
+    item.addEventListener("click", () => {
+      item.classList.toggle("open");
+    });
+  });
+
+  // ---------- Filter chips ----------
+  document.querySelectorAll(".chip-filter").forEach(chip => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".chip-filter").forEach(c=>c.classList.remove("active"));
+      chip.classList.add("active");
+      const f = chip.dataset.filter;
+      document.querySelectorAll(".test-item").forEach(item => {
+        const match = f === "all" || item.dataset.status === f;
+        item.classList.toggle("hide", !match);
+        // also hide its detail row
+        if(item.nextElementSibling && item.nextElementSibling.classList.contains("test-detail")){
+          item.nextElementSibling.classList.toggle("hide", !match);
+        }
+      });
+    });
+  });
+
+  // ---------- Search ----------
+  const searchInput = document.getElementById("search-input");
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.trim().toLowerCase();
+    document.querySelectorAll(".test-item").forEach(item => {
+      const txt = item.textContent.toLowerCase();
+      const match = !q || txt.includes(q);
+      item.classList.toggle("hide", !match);
+      if(item.nextElementSibling && item.nextElementSibling.classList.contains("test-detail")){
+        item.nextElementSibling.classList.toggle("hide", !match);
+      }
+    });
+  });
+
+  // ---------- Donut ring math ----------
+  // circumference = 2 * PI * 74 ≈ 464.96
+  const C = 2 * Math.PI * 74;
+  const total = tests.length;
+  const passN = tests.filter(t=>t.status==="pass").length;
+  const failN = tests.filter(t=>t.status==="fail").length;
+  const skipN = tests.filter(t=>t.status==="skip").length;
+  const passLen = (passN/total) * C;
+  const failLen = (failN/total) * C;
+  const skipLen = (skipN/total) * C;
+  const gap = 2;
+
+  const ringPass = document.getElementById("ring-pass");
+  const ringFail = document.getElementById("ring-fail");
+  const ringSkip = document.getElementById("ring-skip");
+  ringPass.setAttribute("stroke-dasharray", `${passLen - gap} ${C - passLen + gap}`);
+  ringPass.setAttribute("stroke-dashoffset", 0);
+  ringFail.setAttribute("stroke-dasharray", `${failLen - gap} ${C - failLen + gap}`);
+  ringFail.setAttribute("stroke-dashoffset", 0);
+  ringFail.setAttribute("transform", `rotate(${(passN/total)*360 + 1} 90 90)`);
+  ringSkip.setAttribute("stroke-dasharray", `${skipLen - gap} ${C - skipLen + gap}`);
+  ringSkip.setAttribute("stroke-dashoffset", 0);
+  ringSkip.setAttribute("transform", `rotate(${((passN+failN)/total)*360 + 1} 90 90)`);
+
+  // Sync header numbers
+  document.getElementById("passPct").textContent = ((passN/total)*100).toFixed(1);
+  document.getElementById("totalTests").textContent = total;
+  document.getElementById("passCountSub").textContent = passN;
+  document.getElementById("failCountSub").textContent = failN;
+  document.getElementById("skipCountSub").textContent = skipN;
+</script>
+</body>
+</html>
